@@ -2,7 +2,8 @@ import 'package:sqflite/sqflite.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:supermarket_list/model/list.dart';
+import 'package:supermarket_list/model/grouplist.dart';
+import 'package:supermarket_list/model/supermarketlist.dart';
 
 class DbHelper {
   static final DbHelper _dbHelper = DbHelper._internal();
@@ -12,7 +13,13 @@ class DbHelper {
   String colQuantity = "quantity";
   String colArticle = "article";
   String colStatus = "status";
-  String colDate = "date";
+  String colIdGroup = "idGroup";
+
+// groupList
+  String tblGroupList = "grouplist";
+  String colGId = "id";
+  String colGName = "name";
+  String colGDate = "date";
 
   DbHelper._internal();
 
@@ -38,8 +45,12 @@ class DbHelper {
 
   void _create(Database db, int version) async {
     await db.execute(
-        "CREATE TABLE $tblMarketList($colId INTEGER PRIMARY KEY, $colQuantity INTEGER , $colArticle TEXT, " +
-            "$colStatus INTEGER, $colDate TEXT)");
+        "CREATE TABLE $tblGroupList($colGId INTEGER PRIMARY KEY, " +
+            "$colGName TEXT , $colGDate TEXT);");
+    await db.execute(
+        "CREATE TABLE $tblMarketList($colId INTEGER PRIMARY KEY,  " +
+               "FOREIGN KEY ($colIdGroup) REFERENCES $tblGroupList ($colGId) ON DELETE NO ACTION ON UPDATE NO ACTION," +
+            "$colQuantity INTEGER , $colArticle TEXT, $colStatus INTEGER)");
       }
 
   void _upgrade(Database db, int version, int update) async {  
@@ -51,7 +62,14 @@ class DbHelper {
     return result;
   }
 
-  Future<List> getProduct() async {
+  Future<List> getProductByGroup(int group) async {
+    Database db = await this.db;
+    var result =
+        await db.rawQuery("SELECT * FROM $tblMarketList WHERE $colIdGroup = $group order by $colArticle ASC");
+    return result;
+  }
+
+    Future<List> getProducts() async {
     Database db = await this.db;
     var result =
         await db.rawQuery("SELECT * FROM $tblMarketList order by $colArticle ASC");
@@ -78,4 +96,41 @@ class DbHelper {
     result = await db.rawDelete('DELETE FROM $tblMarketList WHERE $colId = $id');
     return result;
   }
+
+  /////////////////////////////////////////////////////////
+  
+    Future<int> insertGroup(GroupList group) async {
+    Database db = await this.db;
+    var result = await db.insert(tblGroupList, group.toMap());
+    return result;
+  }
+
+  Future<List> getGroups() async {
+    Database db = await this.db;
+    var result =
+        await db.rawQuery("SELECT * FROM $tblGroupList order by $colArticle ASC");
+    return result;
+  }
+
+  Future<int> getGCount() async {
+    Database db = await this.db;
+    var result = Sqflite.firstIntValue(
+        await db.rawQuery("Select count (*) from $tblGroupList"));
+    return result;
+  }
+
+  Future<int> updateGroup(GroupList group) async {
+    Database db = await this.db;
+    var result = await db.update(tblGroupList, group.toMap(),
+        where: "$colGId = ?", whereArgs: [group.id]);
+    return result;
+  }
+
+  Future<int> deleteGroup(int id) async {
+    int result;
+    Database db = await this.db;
+    result = await db.rawDelete('DELETE FROM $tblGroupList WHERE $colGId = $id');
+    return result;
+  }
+
 }
