@@ -48,8 +48,7 @@ class DbHelper {
         "CREATE TABLE $tblGroupList($colGId INTEGER PRIMARY KEY, " +
             "$colGName TEXT , $colGDate TEXT);");
     await db.execute(
-        "CREATE TABLE $tblMarketList($colId INTEGER PRIMARY KEY,  " +
-               "FOREIGN KEY ($colIdGroup) REFERENCES $tblGroupList ($colGId) ON DELETE NO ACTION ON UPDATE NO ACTION," +
+        "CREATE TABLE $tblMarketList($colId INTEGER PRIMARY KEY, $colIdGroup INTEGER, " +               
             "$colQuantity INTEGER , $colArticle TEXT, $colStatus INTEGER)");
       }
 
@@ -108,7 +107,7 @@ class DbHelper {
   Future<List> getGroups() async {
     Database db = await this.db;
     var result =
-        await db.rawQuery("SELECT * FROM $tblGroupList order by $colArticle ASC");
+        await db.rawQuery("SELECT * FROM $tblGroupList order by $colGName ASC");
     return result;
   }
 
